@@ -4,7 +4,7 @@
 #include "math.h"
 #include <stdlib.h>
 //#include <zlib.h>
-/* Your code will be inserted here */
+
 
 struct __attribute__((__packed__)) pkt {
     //ordre a importance?? cmt assigner l'ordre et le nombre de bit?
@@ -204,4 +204,9 @@ uint32_t pkt_get_crc   (const pkt_t* pkt)
 const char* pkt_get_payload(const pkt_t* pkt)
 {
     return pkt->payload;
+}
+
+int main()
+{
+    return 1;
 }
