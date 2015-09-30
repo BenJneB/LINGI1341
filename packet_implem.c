@@ -14,19 +14,21 @@ struct __attribute__((__packed__)) pkt {
 	ptypes_t type : 3;
 };
 
-/* Extra code */
-/* Your code will be inserted here */
+char getibit(char c, int i)
+{
+     return ((c>>i) & 1);
+}
 
 pkt_t* pkt_new()
 {
-	pkt_t *packet=(pkt *) malloc(sizeof(pkt));
-	if(pkt==NULL)
+	pkt_t *packet=(pkt_t *) malloc(sizeof(pkt_t));
+	if(packet==NULL)
     {
         return NULL;
     }
     else
     {
-        pkt->payload=NULL;
+        packet->payload=NULL;
         return packet;
     }
 }
@@ -39,11 +41,11 @@ void pkt_del(pkt_t *pkt)
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-	char temp;
+	/*char temp;
 	temp = *data;
 	int tempBit;
 	int window [5];
-	
+
 	//Lecture Type et Mise en Paquet
 	for (i = 0; i < 3; ++i) {
 	  tempBit = (temp >> i) & 1;
@@ -57,16 +59,44 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	//Lecture Window et Mise en Paquet
 	int window = 0;
         for (int i = 0; i < 5; i++) {
-        	tempBit = (temp >> i+3) & 1;	
+        	tempBit = (temp >> i+3) & 1;
         	if (tempBit) {window = window + pow (2, i);}
         }
-        pkt->window = uint8_t(numeral);
-	
+        pkt->window = uint8_t(numeral);*/
+    //char packet[520];
+
+    pkt->length=(uint16_t)(*data+2);
+    int l=pkt->length;
+    pkt->payload=(char *)malloc((size_t)l);
+    pkt->payload=data+4;
+    pkt->crc=(uint32_t)(*data+(4+l));
+    pkt->seqnum=(uint8_t)(*data+2);
+    //TYPE
+    char *header=data;
+    pkt->type=NULL;
+    int i,j;
+    for (i = 0; i < 3; ++i) {
+	  int bit=getibit((char)header,5+i);
+	  if (bit == 1){
+	  	if(pkt->type != NULL) {return E_TYPE;} //Ce type n'existe pas (le bit 1 seulement possible une fois)
+	  	if(i==0) {pkt->type = PTYPE_DATA; }
+	  	else if(i==1) {pkt->type = PTYPE_ACK; }
+	  	else {pkt->type = PTYPE_NACK; }
+	  }
+	}
+	if(pkt->type==NULL){return E_TYPE;}
+	//WINDOW
+	int window=0;
+	for (j = 0; i < 5; j++) {
+        int bit=getibit((char)header,j)	;
+        if (bit) {window = window + pow (2, j);}
+    }
+    pkt->window=(uint8_t)window;
 }
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
-
+    return PKT_OK;
 }
 
 pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
@@ -123,7 +153,7 @@ pkt_status_code pkt_set_length(pkt_t *pkt, const uint16_t length)
 
 pkt_status_code pkt_set_crc(pkt_t *pkt, const uint32_t crc)
 {
-    if()
+    if(1)
     {
         pkt->crc=crc;
         return PKT_OK;
@@ -149,7 +179,7 @@ ptypes_t pkt_get_type  (const pkt_t* pkt)
 
 uint8_t  pkt_get_window(const pkt_t* pkt)
 {
-    return pkt->.window;
+    return pkt->window;
 }
 
 uint8_t  pkt_get_seqnum(const pkt_t* pkt)
