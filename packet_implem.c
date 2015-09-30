@@ -1,9 +1,9 @@
 #include "packet_interface.h"
 
 /* Extra #includes */
-#include "math.h"
+#include <math.h>
 #include <stdlib.h>
-//#include <zlib.h>
+#include <zlib.h>
 
 
 struct __attribute__((__packed__)) pkt {
@@ -68,14 +68,14 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     //char packet[520];
 
     int l=(uint16_t)(*data+2);
-    if(l>512 || l<0){return E_LENGTH;}
+    if(l>512 || l<0 || len>520){return E_LENGTH;}
 
     pkt->payload=(char *)malloc((size_t)l);
     pkt->payload=data+4;
     char *test=(char *)malloc(sizeof(char)*(l+4));
     test=(char *)data;
     uint32_t crc=(uint32_t)(*data+(4+l));
-    uint32_t crc2=crc32(0,test,l+4);
+    uint32_t crc2=crc32(0,(const Bytef *)test,l+4);
     if(crc!=crc2) {return E_CRC;}
     else {pkt->crc=crc;}
     pkt->seqnum=(uint8_t)(*data+2);
@@ -96,11 +96,15 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         if (bit) {window = window + pow (2, j);}
     }
     pkt->window=(uint8_t)window;
+    return PKT_OK;
 }
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
-    return PKT_OK;
+    //todo
+    if(pkt||buf||len)
+    {return PKT_OK;}
+    else{return PKT_OK;}
 }
 
 pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
@@ -118,54 +122,26 @@ pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
 
 pkt_status_code pkt_set_window(pkt_t *pkt, const uint8_t window)
 {
-    if(window>=0 || window<=31)
-    {
         pkt->window=window;
         return PKT_OK;
-    }
-    else
-    {
-        return E_WINDOW;
-    }
 }
 
 pkt_status_code pkt_set_seqnum(pkt_t *pkt, const uint8_t seqnum)
 {
-    if(seqnum>=0 || seqnum<=255)
-	{
         pkt->seqnum=seqnum;
         return PKT_OK;
-	}
-	else
-    {
-        return E_SEQNUM;
-    }
 }
 
 pkt_status_code pkt_set_length(pkt_t *pkt, const uint16_t length)
 {
-    if(length>=0 || length <=512)
-    {
         pkt->length=length;
         return PKT_OK;
-    }
-    else
-    {
-        return E_LENGTH;
-    }
 }
 
 pkt_status_code pkt_set_crc(pkt_t *pkt, const uint32_t crc)
 {
-    if(1)
-    {
         pkt->crc=crc;
         return PKT_OK;
-    }
-    else
-    {
-        return E_CRC;
-    }
 }
 
 pkt_status_code pkt_set_payload(pkt_t *pkt,
@@ -173,7 +149,10 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
 								const uint16_t length)
 
 {
-	/* Your code will be inserted here */
+    //TODO
+    if(pkt||data||length)
+    {return PKT_OK;}
+    else{return PKT_OK;}
 }
 
 ptypes_t pkt_get_type  (const pkt_t* pkt)
