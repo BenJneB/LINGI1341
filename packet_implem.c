@@ -25,12 +25,14 @@ pkt_t* pkt_new()
     }
     else
     {
+        pkt->payload=NULL;
         return packet;
     }
 }
 
 void pkt_del(pkt_t *pkt)
 {
+    free(pkt->payload);
     free(pkt);
 }
 
