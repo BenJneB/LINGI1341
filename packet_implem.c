@@ -38,7 +38,17 @@ void pkt_del(pkt_t *pkt)
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-	/* Your code will be inserted here */
+	char temp;
+	temp = *data;
+	int type [3];
+	int window [5];
+	
+	for (i = 0; i < 3; ++i) {
+	  type[i] = (temp >> i) & 1;
+	}
+	for (i = 0; i < 5; ++i) {
+	  window [i] = (temp >> i) & 1;
+	}
 }
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
