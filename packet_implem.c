@@ -67,8 +67,9 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         pkt->window = uint8_t(numeral);*/
     //char packet[520];
 
-    pkt->length=(uint16_t)(*data+2);
-    int l=pkt->length;
+    int l=(uint16_t)(*data+2);
+    if(l>512 || l<0){return E_LENGTH;}
+
     pkt->payload=(char *)malloc((size_t)l);
     pkt->payload=data+4;
     char *test=(char *)malloc(sizeof(char)*(l+4));
