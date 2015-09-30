@@ -40,15 +40,25 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
 	char temp;
 	temp = *data;
-	int type [3];
+	int typeBit;
 	int window [5];
 	
+	//Lecture Type et Mise en Paquet
 	for (i = 0; i < 3; ++i) {
-	  type[i] = (temp >> i) & 1;
+	  typeBit = (temp >> i) & 1;
+	  if (type == 1){
+	  	if(pkt->type != NULL) {return E_TYPE;} //Ce type n'existe pas (le bit 1 seulement possible une fois)
+	  	if(i==0) {pkt->type = PTYPE_DATA; }
+	  	else if(i==1) {pkt->type = PTYPE_ACK; }
+	  	else {pkt->type = PTYPE_NACK; }
+	  }
 	}
+	//Lecture Window et Mise en Paquet
 	for (i = 0; i < 5; ++i) {
-	  window [i] = (temp >> i) & 1;
+	  window [i] = (temp >> i+3) & 1;
 	}
+	
+	
 }
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
