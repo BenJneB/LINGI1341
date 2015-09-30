@@ -37,7 +37,7 @@ pkt_t* pkt_new()
 
 void pkt_del(pkt_t *pkt)
 {
-    free(pkt->payload);
+    free((char *)pkt->payload);
     free(pkt);
 }
 
@@ -73,14 +73,14 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     pkt->payload=(char *)malloc((size_t)l);
     pkt->payload=data+4;
     char *test=(char *)malloc(sizeof(char)*(l+4));
-    test=data;
+    test=(char *)data;
     uint32_t crc=(uint32_t)(*data+(4+l));
     uint32_t crc2=crc32(0,test,l+4);
     if(crc!=crc2) {return E_CRC;}
     else {pkt->crc=crc;}
     pkt->seqnum=(uint8_t)(*data+2);
     //TYPE
-    char *header=data;
+    char *header=(char *)data;
     int i,j;
     int type=0;
     for (i = 0; i < 3; ++i) {
