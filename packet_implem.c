@@ -205,8 +205,3 @@ const char* pkt_get_payload(const pkt_t* pkt)
 {
     return pkt->payload;
 }
-
-int main()
-{
-    return 1;
-}
