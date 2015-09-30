@@ -2,6 +2,8 @@
 
 /* Extra #includes */
 #include "math.h"
+#include <stdlib.h>
+//#include <zlib.h>
 /* Your code will be inserted here */
 
 struct __attribute__((__packed__)) pkt {
@@ -14,7 +16,7 @@ struct __attribute__((__packed__)) pkt {
 	ptypes_t type : 3;
 };
 
-char getibit(char c, int i)
+int getibit(char c, int i)
 {
      return ((c>>i) & 1);
 }
@@ -70,25 +72,22 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     pkt->payload=(char *)malloc((size_t)l);
     pkt->payload=data+4;
     pkt->crc=(uint32_t)(*data+(4+l));
+    uint32_t crc2=crc32(0,pkt->payload,l+4);
     pkt->seqnum=(uint8_t)(*data+2);
     //TYPE
     char *header=data;
-    pkt->type=NULL;
     int i,j;
+    int type=0;
     for (i = 0; i < 3; ++i) {
-	  int bit=getibit((char)header,5+i);
-	  if (bit == 1){
-	  	if(pkt->type != NULL) {return E_TYPE;} //Ce type n'existe pas (le bit 1 seulement possible une fois)
-	  	if(i==0) {pkt->type = PTYPE_DATA; }
-	  	else if(i==1) {pkt->type = PTYPE_ACK; }
-	  	else {pkt->type = PTYPE_NACK; }
-	  }
-	}
-	if(pkt->type==NULL){return E_TYPE;}
+	  int bit=getibit((char)*header,5+i);
+	  if (bit) {type = type + pow (2, i);}
+    }
+	if(type==1 || type==2 || type==4){pkt->type=type;}
+	else{return E_TYPE;}
 	//WINDOW
 	int window=0;
 	for (j = 0; i < 5; j++) {
-        int bit=getibit((char)header,j)	;
+        int bit=getibit((char)*header,j)	;
         if (bit) {window = window + pow (2, j);}
     }
     pkt->window=(uint8_t)window;
