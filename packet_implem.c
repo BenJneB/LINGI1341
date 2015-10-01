@@ -178,18 +178,17 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
 {
     if(length > 512){ return E_LENGTH;}
     else{
+      //Ajout du Payload
       if(pkt->payload != NULL) {free((char *)pkt->payload);}
       int reste = length % 4;
       pkt->payload=(char *) malloc(sizeof(char)*(length+reste));
+      pkt->payload=data;
+      //Ajout de 0 dans le reste
       if(reste != 0){
-        char paddingBytes [reste];
-        for (int j = 0; j < reste ; j++) {
-        paddingBytes[j]='0'; 
+      const char *temp = pkt->payload;
+      for (int j = 1; j = reste ; j++) {
+      //*(temp+length+j)='0'; erreur assignement Read-Only, cmt ecrire au bout du payload ?
         }
-        pkt->payload=strcat(data,paddingBytes);
-      }
-      else{
-        pkt->payload=data;
       }
     }
     return PKT_OK;
