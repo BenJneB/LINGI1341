@@ -176,10 +176,23 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
 								const uint16_t length)
 
 {
-    //TODO
-    if(pkt||data||length)
-    {return PKT_OK;}
-    else{return PKT_OK;}
+    if(length > 512){ return E_LENGTH;}
+    else{
+      if(pkt->payload != NULL) {free((char *)pkt->payload);}
+      int reste = length % 4;
+      pkt->payload=(char *) malloc(sizeof(char)*(length+reste));
+      if(reste != 0){
+        char paddingBytes [reste];
+        for (int j = 0; j < reste ; j++) {
+        paddingBytes[j]='0'; 
+        }
+        pkt->payload=strcat(data,paddingBytes);
+      }
+      else{
+        pkt->payload=data;
+      }
+    }
+    return PKT_OK;
 }
 
 ptypes_t pkt_get_type  (const pkt_t* pkt)
