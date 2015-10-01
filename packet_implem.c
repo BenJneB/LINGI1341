@@ -68,34 +68,61 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     //char packet[520];
 
     int l=(uint16_t)(*data+2);
-    if(l>512 || l<0 || len>520){return E_LENGTH;}
+    if(l>512 || l<0 || len>520)
+    {
+        pkt_del(pkt);
+        return E_LENGTH;
+    }
+    else
+    {
+        pkt_set_length(pkt,l);
+    }
 
     pkt->payload=(char *)malloc((size_t)l);
     pkt->payload=data+4;
+    // UTILISER SET
     char *test=(char *)malloc(sizeof(char)*(l+4));
     test=(char *)data;
     uint32_t crc=(uint32_t)(*data+(4+l));
     uint32_t crc2=crc32(0,(const Bytef *)test,l+4);
-    if(crc!=crc2) {return E_CRC;}
-    else {pkt->crc=crc;}
-    pkt->seqnum=(uint8_t)(*data+2);
+    if(crc!=crc2)
+    {
+        pkt_del(pkt);
+        free(test);
+        return E_CRC;
+    }
+    else
+    {
+        free(test);
+        pkt_set_crc(pkt,crc);
+    }
+
+    pkt_set_seqnum(pkt,(uint8_t)(*data+2));
     //TYPE
-    char *header=(char *)data;
+    char *header=(char *)malloc(sizeof(char));
+    header=(char *)data;
     int i,j;
     int type=0;
     for (i = 0; i < 3; ++i) {
 	  int bit=getibit((char)*header,5+i);
 	  if (bit) {type = type + pow (2, i);}
     }
-	if(type==1 || type==2 || type==4){pkt->type=type;}
-	else{return E_TYPE;}
+	if(type==1 || type==2 || type==4)
+    {
+        pkt_set_type(pkt,type);
+    }
+	else
+    {
+        pkt_del(pkt);
+        return E_TYPE;
+    }
 	//WINDOW
 	int window=0;
 	for (j = 0; i < 5; j++) {
         int bit=getibit((char)*header,j)	;
         if (bit) {window = window + pow (2, j);}
     }
-    pkt->window=(uint8_t)window;
+    pkt_set_window(pkt,(uint8_t)window);
     return PKT_OK;
 }
 
