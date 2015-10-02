@@ -78,8 +78,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         pkt_set_length(pkt,l);
     }
     int reste=l%4;
-    pkt->payload=(char *)malloc((char)(l+reste));
-    pkt->payload=(char *)(data+4);
+    pkt_set_payload(pkt,(data+4),l+reste);
     // UTILISER SET
     char *test=(char *)malloc(sizeof(char)*(l+4));
     test=(char *)data;
@@ -128,11 +127,11 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
-    uint8_t window=pkt->window;
-    uint16_t length=pkt->length;
-    uint32_t crc=pkt->crc;
-    uint8_t seqnum = pkt->seqnum;
-	ptypes_t type =pkt->type;
+    uint8_t window=pkt_get_window(pkt);
+    uint16_t length=pkt_get_length(pkt);
+    uint32_t crc=pkt_get_crc(pkt);
+    uint8_t seqnum = pkt_get_seqnum(pkt);
+	ptypes_t type =pkt_get_type(pkt);
     int reste=length%4;
 	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
 	else{
@@ -188,11 +187,12 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
     if(length > 512){ return E_LENGTH;}
     else{
       if(pkt->payload != NULL) {free((char *)pkt->payload);}
-      int realSize= length + length % 4 ; 
+      int realSize= length + length % 4 ;
       pkt->payload=(char *) calloc(realSize,sizeof(char));
       if (pkt->payload == NULL) {return E_NOMEM;}
       char * temp = pkt->payload;
-      for (int n=0;n<length;n++){
+      int n;
+      for (n=0;n<length;n++){
         *(temp+n)=data[n];
       }
     return PKT_OK;
