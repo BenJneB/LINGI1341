@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <zlib.h>
 
+//Comment tester un invalid padding?
+//Comment tester qu'il n'y a pas d'header?
+//Comment tester qu'il est unconsistant ?
 
 struct __attribute__((__packed__)) pkt {
     //ordre a importance?? cmt assigner l'ordre et le nombre de bit?
@@ -43,19 +46,24 @@ void pkt_del(pkt_t *pkt)
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-    uint16_t l=(uint16_t)(*data+2);
+    uint16_t l=(uint16_t)*(data+2);
     if(l>512 || len>520)
     {
         pkt_del(pkt);
         return E_LENGTH;
+    }
+    if(len<=4)
+    {
+        pkt_del(pkt);
+        return E_NOPAYLOAD;
     }
     else
     {
         pkt_set_length(pkt,l);
     }
     uint16_t reste=l%4;
+
     pkt_set_payload(pkt,(data+4),l+reste);
-    // UTILISER SET
     char *test=(char *)malloc(sizeof(char)*(l+4));
     test=(char *)data;
     uint32_t crc=(uint32_t)(*data+(4+l));
@@ -72,7 +80,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         pkt_set_crc(pkt,crc);
     }
 
-    pkt_set_seqnum(pkt,(uint8_t)(*data+2));
+    pkt_set_seqnum(pkt,(uint8_t)*(data+2));
     //TYPE
     uint8_t *header=(uint8_t *)malloc(sizeof(uint8_t));
     header=(uint8_t *)data;
