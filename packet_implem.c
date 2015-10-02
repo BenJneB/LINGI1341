@@ -132,23 +132,23 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     uint8_t window=pkt->window;
     uint16_t length=pkt->length;
     uint32_t crc=pkt->crc;
-    const char *payload=pkt->payload;
     uint8_t seqnum = pkt->seqnum;
 	ptypes_t type =pkt->type;
-	buf=(char *)malloc(sizeof(char)*(length+8));
-
-	if(length+4+4 > (uint16_t)*len){return E_NOMEM;}
+    int reste=length%4;
+	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
 	else{
 	type=type<<5;
 	uint8_t byteone=type|window;
 	buf[0]=byteone;
-	buf[1]=seqnum;
-	buf[2]=length;
-	buf[4]=*payload;
-	buf[4+length]=crc;
+	*(buf+1)=seqnum;
+	*(buf+2)=length;
+	*(buf+4)=*(pkt->payload);
+	*(buf+length+reste)=crc;
+    *len=(length+8+reste);
+	    return 0;
 	}
 
-    return 0;
+
 }
 
 pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
