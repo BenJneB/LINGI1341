@@ -8,13 +8,12 @@
 
 struct __attribute__((__packed__)) pkt {
     //ordre a importance?? cmt assigner l'ordre et le nombre de bit?
-    uint32_t crc;
-    char *payload;
-    uint16_t length;
-    uint8_t seqnum;
+    ptypes_t type : 3;
     uint8_t window : 5;
-	ptypes_t type : 3;
-
+    uint8_t seqnum;
+    uint16_t length;
+    char *payload;
+    uint32_t crc;
 };
 
 int getibit(char c, int i)
@@ -188,13 +187,12 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
 {
     if(length > 512){ return E_LENGTH;}
     else{
-      if(pkt->payload != NULL) {free(pkt->payload);}
-      int realSize= length + length % 4 ;
+      if(pkt->payload != NULL) {free((char *)pkt->payload);}
+      int realSize= length + length % 4 ; 
       pkt->payload=(char *) calloc(realSize,sizeof(char));
       if (pkt->payload == NULL) {return E_NOMEM;}
-      char * temp =pkt->payload;
-      int n;
-      for (n=0;n<length;n++){
+      char * temp = pkt->payload;
+      for (int n=0;n<length;n++){
         *(temp+n)=data[n];
       }
     return PKT_OK;
