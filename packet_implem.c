@@ -77,8 +77,8 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     {
         pkt_set_length(pkt,l);
     }
-
-    pkt->payload=(char *)malloc((size_t)l);
+    int reste=l%4;
+    pkt->payload=(char *)malloc((char)(l+reste));
     pkt->payload=data+4;
     // UTILISER SET
     char *test=(char *)malloc(sizeof(char)*(l+4));
@@ -128,10 +128,13 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
-    //todo
-    if(pkt||buf||len)
-    {return PKT_OK;}
-    else{return PKT_OK;}
+    uint8_t window=pkt->window;
+    uint16_t length=pkt->length;
+    uint32_t crc=pkt->crc;
+    const char *payload=pkt->payload;
+    uint8_t seqnum = pkt->seqnum;
+	ptypes_t type =pkt->type;
+
 }
 
 pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
@@ -183,15 +186,16 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
       int reste = length % 4;
       pkt->payload=(char *) malloc(sizeof(char)*(length+reste));
       pkt->payload=data;
-      //Ajout de 0 dans le reste
-      if(reste != 0){
-      const char *temp = pkt->payload;
-      for (int j = 1; j = reste ; j++) {
+     // //Ajout de 0 dans le reste
+      //if(reste != 0){
+     // const char *temp = pkt->payload;
+      //for (int j = 1; j = reste ; j++) {
       //*(temp+length+j)='0'; erreur assignement Read-Only, cmt ecrire au bout du payload ?
-        }
-      }
-    }
+       // }
+      //}
+    //}
     return PKT_OK;
+}
 }
 
 ptypes_t pkt_get_type  (const pkt_t* pkt)
