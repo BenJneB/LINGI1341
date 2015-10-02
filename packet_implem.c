@@ -43,30 +43,6 @@ void pkt_del(pkt_t *pkt)
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-	/*char temp;
-	temp = *data;
-	int tempBit;
-	int window [5];
-
-	//Lecture Type et Mise en Paquet
-	for (i = 0; i < 3; ++i) {
-	  tempBit = (temp >> i) & 1;
-	  if (type == 1){
-	  	if(pkt->type != NULL) {return E_TYPE;} //Ce type n'existe pas (le bit 1 seulement possible une fois)
-	  	if(i==0) {pkt->type = PTYPE_DATA; }
-	  	else if(i==1) {pkt->type = PTYPE_ACK; }
-	  	else {pkt->type = PTYPE_NACK; }
-	  }
-	}
-	//Lecture Window et Mise en Paquet
-	int window = 0;
-        for (int i = 0; i < 5; i++) {
-        	tempBit = (temp >> i+3) & 1;
-        	if (tempBit) {window = window + pow (2, i);}
-        }
-        pkt->window = uint8_t(numeral);*/
-    //char packet[520];
-
     int l=(uint16_t)(*data+2);
     if(l>512 || l<0 || len>520)
     {
@@ -143,7 +119,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	*(buf+4)=*(pkt->payload);
 	*(buf+length+reste)=crc;
     *len=(length+8+reste);
-	    return 0;
+    return PKT_OK;
 	}
 
 
