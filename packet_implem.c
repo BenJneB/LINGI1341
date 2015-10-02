@@ -107,7 +107,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     uint16_t length=pkt_get_length(pkt);
     uint32_t crc=pkt_get_crc(pkt);
     uint8_t seqnum = pkt_get_seqnum(pkt);
-	ptypes_t type =pkt_get_type(pkt);
+	uint8_t type =(uint8_t)pkt_get_type(pkt);
     int reste=length%4;
 	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
 	else{
@@ -117,7 +117,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	*(buf+1)=seqnum;
 	*(buf+2)=length;
 	*(buf+4)=*(pkt->payload);
-	*(buf+length+reste+4)=crc;
+	*(buf+length+reste)=crc;
     *len=(length+8+reste);
     return PKT_OK;
 	}
