@@ -9,7 +9,7 @@
 struct __attribute__((__packed__)) pkt {
     //ordre a importance?? cmt assigner l'ordre et le nombre de bit?
     uint32_t crc;
-    const char *payload;
+    char *payload;
     uint16_t length;
     uint8_t seqnum;
     uint8_t window : 5;
@@ -38,7 +38,7 @@ pkt_t* pkt_new()
 
 void pkt_del(pkt_t *pkt)
 {
-    free((char *)pkt->payload);
+    free(pkt->payload);
     free(pkt);
 }
 
@@ -80,7 +80,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     }
     int reste=l%4;
     pkt->payload=(char *)malloc((char)(l+reste));
-    pkt->payload=data+4;
+    pkt->payload=(char *)(data+4);
     // UTILISER SET
     char *test=(char *)malloc(sizeof(char)*(l+4));
     test=(char *)data;
@@ -108,7 +108,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	  int bit=getibit((char)*header,5+i);
 	  if (bit) {type = type + pow (2, i);}
     }
-	if(type==1 || type==2 || type==4)
+	if(type==PTYPE_DATA || type==PTYPE_ACK || type==PTYPE_NACK)
     {
         pkt_set_type(pkt,type);
     }
@@ -139,7 +139,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	else{
 	type=type<<5;
 	uint8_t byteone=type|window;
-	buf[0]=byteone;
+	*buf=byteone;
 	*(buf+1)=seqnum;
 	*(buf+2)=length;
 	*(buf+4)=*(pkt->payload);
@@ -153,15 +153,8 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 
 pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
 {
-    if (type==PTYPE_DATA || type==PTYPE_ACK || type==PTYPE_NACK)
-    {
         pkt->type=type;
         return PKT_OK;
-    }
-    else
-    {
-        return E_TYPE;
-    }
 }
 
 pkt_status_code pkt_set_window(pkt_t *pkt, const uint8_t window)
@@ -195,12 +188,13 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
 {
     if(length > 512){ return E_LENGTH;}
     else{
-      if(pkt->payload != NULL) {free((char *)pkt->payload);}
-      int realSize= length + length % 4 ; 
+      if(pkt->payload != NULL) {free(pkt->payload);}
+      int realSize= length + length % 4 ;
       pkt->payload=(char *) calloc(realSize,sizeof(char));
       if (pkt->payload == NULL) {return E_NOMEM;}
-      char * temp = pkt->payload;
-      for (int n=0;n<length;n++){
+      char * temp =pkt->payload;
+      int n;
+      for (n=0;n<length;n++){
         *(temp+n)=data[n];
       }
     return PKT_OK;
