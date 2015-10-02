@@ -43,8 +43,8 @@ void pkt_del(pkt_t *pkt)
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-    int l=(uint16_t)(*data+2);
-    if(l>512 || l<0 || len>520)
+    uint16_t l=(uint16_t)(*data+2);
+    if(l>512 || len>520)
     {
         pkt_del(pkt);
         return E_LENGTH;
@@ -53,7 +53,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     {
         pkt_set_length(pkt,l);
     }
-    int reste=l%4;
+    uint16_t reste=l%4;
     pkt_set_payload(pkt,(data+4),l+reste);
     // UTILISER SET
     char *test=(char *)malloc(sizeof(char)*(l+4));
@@ -74,10 +74,10 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 
     pkt_set_seqnum(pkt,(uint8_t)(*data+2));
     //TYPE
-    char *header=(char *)malloc(sizeof(char));
-    header=(char *)data;
+    uint8_t *header=(uint8_t *)malloc(sizeof(uint8_t));
+    header=(uint8_t *)data;
     int i,j;
-    int type=0;
+    ptypes_t type=0;
     for (i = 0; i < 3; ++i) {
 	  int bit=getibit((char)*header,5+i);
 	  if (bit) {type = type + pow (2, i);}
@@ -117,7 +117,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	*(buf+1)=seqnum;
 	*(buf+2)=length;
 	*(buf+4)=*(pkt->payload);
-	*(buf+length+reste)=crc;
+	*(buf+length+reste+4)=crc;
     *len=(length+8+reste);
     return PKT_OK;
 	}
