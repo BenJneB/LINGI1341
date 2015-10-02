@@ -117,7 +117,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	*(buf+1)=seqnum;
 	*(buf+2)=length;
 	*(buf+4)=*(pkt->payload);
-	*(buf+length+reste)=crc;
+	*(buf+length+reste+4)=crc;
     *len=(length+8+reste);
     return PKT_OK;
 	}
