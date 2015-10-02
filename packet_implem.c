@@ -14,6 +14,7 @@ struct __attribute__((__packed__)) pkt {
     uint8_t seqnum;
     uint8_t window : 5;
 	ptypes_t type : 3;
+
 };
 
 int getibit(char c, int i)
@@ -134,7 +135,20 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     const char *payload=pkt->payload;
     uint8_t seqnum = pkt->seqnum;
 	ptypes_t type =pkt->type;
+	buf=(char *)malloc(sizeof(char)*(length+8));
 
+	if(length+4+4 > (uint16_t)*len){return E_NOMEM;}
+	else{
+	type=type<<5;
+	uint8_t byteone=type|window;
+	buf[0]=byteone;
+	buf[1]=seqnum;
+	buf[2]=length;
+	buf[4]=*payload;
+	buf[4+length]=crc;
+	}
+
+    return 0;
 }
 
 pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
