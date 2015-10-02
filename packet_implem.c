@@ -108,7 +108,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     uint32_t crc=pkt_get_crc(pkt);
     uint8_t seqnum = pkt_get_seqnum(pkt);
 	uint8_t type =(uint8_t)pkt_get_type(pkt);
-    int reste=length%4;
+    uint16_t reste=length%4;
 	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
 	else{
 	type=type<<5;
@@ -166,10 +166,10 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
       int realSize= length + length % 4 ;
       pkt->payload=(char *) calloc(realSize,sizeof(char));
       if (pkt->payload == NULL) {return E_NOMEM;}
-      char * temp = pkt->payload;
+      //char *temp = pkt->payload;
       int n;
-      for (n=0;n<length;n++){
-        *(temp+n)=data[n];
+      for (n=0;n<realSize;n++){
+        *(pkt->payload+n)=data[n];
       }
     return PKT_OK;
     }
