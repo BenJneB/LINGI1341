@@ -73,7 +73,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     pkt_set_payload(pkt,(data+4),l+reste);
     char *test=(char *)malloc(sizeof(char)*(l+4));
     test=(char *)data;
-    uint32_t crc=ntohl((uint32_t)(*data+(4+l)));
+    uint32_t crc=ntohl((uint32_t)*(data+(4+l+reste)));
     uint32_t crc2=crc32(0,(const Bytef *)test,l+4);
     if(crc!=crc2)
     {
