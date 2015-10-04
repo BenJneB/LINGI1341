@@ -125,6 +125,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	uint8_t type =(uint8_t)pkt_get_type(pkt);
     uint16_t reste=length%4;
 	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
+	//if(length+reste != (uint16_t)sizeof(pkt->payload)) {return E_UNCONSISTENT;}
 	else{
         type=type<<5;
         uint8_t byteone=type|window;
@@ -132,9 +133,10 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
         *(buf+1)=seqnum;
         *(buf+2)=htons(length);
         //*(buf+4)=*(pkt->payload);
-        memcpy((char *)pkt->payload, (buf+4), length+reste);
+        memcpy((buf+4), (char *)pkt->payload, length+reste);
         *(buf+length+reste+4)=htonl(crc);
-        *len=(length+8+reste);
+        size_t l=length+8+reste;
+        *len=l;
         return PKT_OK;
 	}
 
