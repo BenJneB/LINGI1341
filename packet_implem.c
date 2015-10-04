@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <zlib.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 //Comment tester un invalid padding?
 //Comment tester qu'il n'y a pas d'header?
@@ -130,7 +131,8 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
         *buf=byteone;
         *(buf+1)=seqnum;
         *(buf+2)=htons(length);
-        *(buf+4)=*(pkt->payload);
+        //*(buf+4)=*(pkt->payload);
+        memcpy((char *)pkt->payload, (buf+4), length+reste);
         *(buf+length+reste+4)=htonl(crc);
         *len=(length+8+reste);
         return PKT_OK;
@@ -181,10 +183,11 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
       pkt->payload=(char *) calloc(realSize,sizeof(char));
       if (pkt->payload == NULL) {return E_NOMEM;}
       //char *temp = pkt->payload;
-      int n;
-      for (n=0;n<realSize;n++){
+      memcpy(pkt->payload,(char *)data,length);
+     /* int n;
+      for (n=0;n<length;n++){
         *(pkt->payload+n)=data[n];
-      }
+      }*/
     return PKT_OK;
     }
 }
