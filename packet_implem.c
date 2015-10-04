@@ -46,51 +46,7 @@ void pkt_del(pkt_t *pkt)
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-    if(len>512) {return E_LENGTH;}
-    int i;
-    for (i = 0; i < 4; ++i) {
-      if(*(data+i) == NULL) {return E_NOHEADER;}
-    }
-    if(*(data+4) == NULL) {return E_NOPAYLOAD;}
-    
-    //Lecture Type
-    char typeAndWindow = *data;
-    int tempBit;
-
-    for (i = 0; i < 3; ++i) {
-       tempBit = (*data >> i) & 1;
-       if (tempBit == 1){
-        if(pkt->type != NULL) {return E_TYPE;}
-        if(i==0) {pkt->type = PTYPE_DATA; }
-        else if (i == 1) {pkt->type = PTYPE_ACK;}
-        else {pkt->type = PTYPE_NACK;}
-       }
-    }
-    //Lecture Window
-    uint8_t window = 0;
-    for (i = 0; i < 5; i++) {
-      tempBit = (*data >> i+3) & 1;
-      if (tempBit) {window = window + pow (2, i);}
-    }
-    pkt->window = window;
-    //Lecture Seq
-    uint8_t seqnum = *(uint8_t *)(data+1); //On caste le pointeur char en pointeur unit8, puis on demande sa valeur.
-    pkt->seqnum = seqnum;
-    //Lectrue Length
-    uint16_t length = *(uint16_t *)(data+2);
-    if(length > 512) {return E_LENGTH;}
-    pkt->length=length;
-    //Lecture Payload
-    char * tempData = data+4;
-    pkt_status_code code = pkt_set_payload(pkt, tempData,len);
-    if ( code != PKT_OK) { return code;}
-    else {
-     //Decoder le CRC
-     return PKT_OK;
-    }
-    //FIN
-    
-    /*uint16_t l=(uint16_t)*(data+2);
+    uint16_t l=(uint16_t)*(data+2);
     if(l>512 || len>520)
     {
         pkt_del(pkt);
@@ -150,7 +106,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         if (bit) {window = window + pow (2, j);}
     }
     pkt_set_window(pkt,(uint8_t)window);
-    return PKT_OK;*/
+    return PKT_OK;
 }
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
