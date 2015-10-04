@@ -58,6 +58,11 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         pkt_del(pkt);
         return E_NOPAYLOAD;
     }
+    if(len<l)
+    {
+        pkt_del(pkt);
+        return E_NOHEADER;
+    }
     else
     {
         pkt_set_length(pkt,l);
@@ -120,15 +125,15 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     uint16_t reste=length%4;
 	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
 	else{
-	type=type<<5;
-	uint8_t byteone=type|window;
-	*buf=byteone;
-	*(buf+1)=seqnum;
-	*(buf+2)=htons(length);
-	*(buf+4)=*(pkt->payload);
-	*(buf+length+reste+4)=htonl(crc);
-    *len=(length+8+reste);
-    return PKT_OK;
+        type=type<<5;
+        uint8_t byteone=type|window;
+        *buf=byteone;
+        *(buf+1)=seqnum;
+        *(buf+2)=htons(length);
+        *(buf+4)=*(pkt->payload);
+        *(buf+length+reste+4)=htonl(crc);
+        *len=(length+8+reste);
+        return PKT_OK;
 	}
 
 
