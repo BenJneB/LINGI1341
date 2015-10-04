@@ -107,12 +107,12 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         return E_TYPE;
     }
 	//WINDOW
-	int window=0;
+	uint8_t window=0;
 	for (j = 0; i < 5; j++) {
         int bit=getibit((char)*header,j)	;
         if (bit) {window = window + pow (2, j);}
     }
-    pkt_set_window(pkt,(uint8_t)window);
+    pkt_set_window(pkt,window);
     return PKT_OK;
 }
 
