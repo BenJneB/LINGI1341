@@ -71,19 +71,19 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     uint16_t reste=l%4;
 
     pkt_set_payload(pkt,(data+4),l+reste);
-    char *test=(char *)malloc(sizeof(char)*(l+4));
+    char *test;//=(char *)malloc(sizeof(char)*(l+4));
     test=(char *)data;
     uint32_t crc=ntohl((uint32_t)*(data+(4+l+reste)));
     uint32_t crc2=crc32(0,(const Bytef *)test,l+4);
     if(crc!=crc2)
     {
         pkt_del(pkt);
-        free(test);
+        //free(test);
         return E_CRC;
     }
     else
     {
-        free(test);
+        //free(test);
         pkt_set_crc(pkt,crc);
     }
 
@@ -129,14 +129,18 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	else{
         type=type<<5;
         uint8_t byteone=type|window;
-        *buf=byteone;
-        *(buf+1)=seqnum;
-        *(buf+2)=htons(length);
+	memcpy((buf),&byteone,1);
+	memcpy((buf+1),&seqnum,1);
+        //*buf=byteone;
+       //*(buf+1)=seqnum;
+	uint16_t l2=htons(length);
+        memcpy((buf+2),&l2,2);
         //*(buf+4)=*(pkt->payload);
         memcpy((buf+4), (char *)pkt->payload, length+reste);
-        *(buf+length+reste+4)=htonl(crc);
+	uint32_t c2=htonl(crc);
+        memcpy((buf+length+reste+4),&c2,4);
         size_t l=length+8+reste;
-        *len=l;
+        len=&l;
         return PKT_OK;
 	}
 
