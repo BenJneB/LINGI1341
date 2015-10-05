@@ -71,10 +71,15 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         	pkt_set_length(pkt,*l);
     	}
     	uint16_t reste=*l%4;
-    	pkt_set_payload(pkt,(data+4),*l+(4-reste));
+	uint16_t pad;
+	if(reste != 0)
+		pad=4-reste;
+	else
+		pad=0;
+    	pkt_set_payload(pkt,(data+4),*l+(pad));
     	char *test;
     	test=(char *)data;
-    	uint32_t *crc=((uint32_t *)(data+(4+*l+4-reste)));
+    	uint32_t *crc=((uint32_t *)(data+(4+*l+pad)));
 	*crc=ntohl(*crc);
     	uint32_t crc2=crc32(0,(const Bytef *)test,*l+4);
     	if(*crc!=crc2)
@@ -124,6 +129,11 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     uint8_t seqnum = pkt_get_seqnum(pkt);
 	uint8_t type =(uint8_t)pkt_get_type(pkt);
     uint16_t reste=length%4;
+	uint16_t pad;
+	if(reste!=0)
+		pad=4-reste;
+	else
+		pad=0;
 	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
 	else{
         type=type<<5;
@@ -133,10 +143,10 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	uint16_t l2=htons(length);
         memcpy((buf+2),&l2,2);
 	char *payload = (char *)pkt_get_payload(pkt);
-        memcpy((buf+4), payload, length+4-reste);
+        memcpy((buf+4), payload, length+pad);
 	uint32_t c2=htonl(crc);
-        memcpy((buf+length+4-reste+4),&c2,4);
-        size_t l=length+8+4-reste;
+        memcpy((buf+length+pad+4),&c2,4);
+        size_t l=length+8+pad;
         *len=l;
         return PKT_OK;
 	}
@@ -182,7 +192,12 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
     if(length > 512){ return E_LENGTH;}
     else{
       	if(pkt->payload != NULL) {free((char *)pkt->payload);}
-      	int realSize= length + 4-(length % 4) ;
+	int pad;
+	if (length%4 != 0)
+		pad = 4- length%4;
+	else
+		pad =0;
+      	int realSize= length + pad ;
       	pkt->payload=(char *) calloc(realSize,sizeof(char));
       	if (pkt->payload == NULL) {return E_NOMEM;}
 
