@@ -45,19 +45,22 @@ int main()
 	pkt_set_length(pack,11);
 
 	char test[16];
-	char *test2=(char *)test;
+	//char *test2=(char *)test;
 	uint8_t type=pkt_get_type(pack);
 	type=type<<5;
 	uint8_t window=pkt_get_window(pack);
 	uint8_t byte=type|window;
-	*test2=byte;
-	*(test2+1)=pkt_get_seqnum(pack);
+uint8_t seqnum=pkt_get_seqnum(pack);
+	memcpy((test),&byte, 1);
+	memcpy((test+1),&seqnum, 1);
+	//*test=byte;
+	//*(test+1)=pkt_get_seqnum(pack);
 	uint16_t length=pkt_get_length(pack);
-	memcpy((test2+2),&length, 2);
-	memcpy((test2+4),pkt_get_payload(pack), 12);
+	memcpy((test+2),&length, 2);
+	memcpy((test+4),pkt_get_payload(pack), 12);
 
 
-	uint32_t crc=crc32(0,(const Bytef *)test2,15);
+	uint32_t crc=crc32(0,(const Bytef *)test,15);
 	pkt_set_crc(pack,crc);
 
 	char buff[30]; size_t len = 30;
