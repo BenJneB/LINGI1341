@@ -76,7 +76,8 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 		pad=4-reste;
 	else
 		pad=0;
-    	pkt_set_payload(pkt,(data+4),*l+(pad));
+
+    	pkt_set_payload(pkt,(data+4),*l);
     	char *test;
     	test=(char *)data;
     	uint32_t *crc=((uint32_t *)(data+(4+*l+pad)));
@@ -91,7 +92,6 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
     	{
         	pkt_set_crc(pkt,*crc);
     	}
-
     	pkt_set_seqnum(pkt,(uint8_t)*(data+1));
     //TYPE
     	uint8_t *header;
@@ -112,12 +112,14 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         	return E_TYPE;
     	}
 	//WINDOW
+
 	uint8_t window=0;
 	for (j = 0; j < 5; j++) {
         	int bit=getibit((char)*header,j)	;
         	if (bit) {window = window + pow (2, j);}
     	}
     	pkt_set_window(pkt,window);
+
     	return PKT_OK;
 }
 
