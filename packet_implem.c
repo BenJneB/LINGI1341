@@ -87,7 +87,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         	pkt_set_crc(pkt,*crc);
     	}
 
-    	pkt_set_seqnum(pkt,(uint8_t)*(data+2));
+    	pkt_set_seqnum(pkt,(uint8_t)*(data+1));
     //TYPE
     	uint8_t *header;
     	header=(uint8_t *)data;
@@ -123,7 +123,6 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     uint32_t crc=pkt_get_crc(pkt);
     uint8_t seqnum = pkt_get_seqnum(pkt);
 	uint8_t type =(uint8_t)pkt_get_type(pkt);
-printf(" ENCODE window : %hu,type: %d, crc : %u, length : %hu, seqnum : %hu\n",window,type,crc,length,seqnum);
     uint16_t reste=length%4;
 	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
 	else{
