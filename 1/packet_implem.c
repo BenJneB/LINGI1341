@@ -56,7 +56,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         else
             pad=0;
 
-    	if(l>512 || len>520)
+    	if(l>MAX_PAYLOAD_SIZE || len>520)
     	{
         	pkt_del(pkt);
         	return E_LENGTH;
