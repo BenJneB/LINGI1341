@@ -22,10 +22,6 @@ struct __attribute__((__packed__)) pkt {
     uint32_t crc;
 };
 
-int getibit(char c, int i)
-{
-     return ((c>>i) & 1);
-}
 
 pkt_t* pkt_new()
 {
@@ -49,77 +45,72 @@ void pkt_del(pkt_t *pkt)
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-	uint16_t *l=(uint16_t *)(data+2);
-	*l=ntohs(*l);
-    	if(*l>512 || len>520)
+
+
+        uint16_t l=(data[2]<<8)|data[3];
+        uint16_t reste=l%4;
+        uint16_t pad;
+
+        if(reste != 0)
+            pad=4-reste;
+        else
+            pad=0;
+
+    	if(l>512 || len>520)
     	{
         	pkt_del(pkt);
         	return E_LENGTH;
     	}
-    	if(len<=4)
+    	if(len==8)
     	{
         	pkt_del(pkt);
        	 	return E_NOPAYLOAD;
     	}
-    	if(len<*l)
+    	if(4+l+pad+4 != (uint16_t)len)
     	{
         	pkt_del(pkt);
-        	return E_NOHEADER;
+        	return E_UNCONSISTENT;
     	}
     	else
     	{
-        	pkt_set_length(pkt,*l);
+        	pkt_set_length(pkt,l);
     	}
-    	uint16_t reste=*l%4;
-	uint16_t pad;
-	if(reste != 0)
-		pad=4-reste;
-	else
-		pad=0;
 
-    	pkt_set_payload(pkt,(data+4),*l);
-    	char *test;
-    	test=(char *)data;
-    	uint32_t *crc=((uint32_t *)(data+(4+*l+pad)));
-	*crc=ntohl(*crc);
-    	uint32_t crc2=crc32(0,(const Bytef *)test,*l+4);
-    	if(*crc!=crc2)
+
+    	pkt_set_payload(pkt,data+4,l);
+    	//uint32_t crc=(data[len-4]<<24)|(data[len-3]<<16)|(data[len-2]<<8)|(data[len-1]);
+        uint32_t crc = (uint8_t) data[len-4];
+        crc = (crc << 8) + (uint8_t) data[len-3];
+        crc = (crc << 8) + (uint8_t) data[len-2];
+        crc = (crc << 8) + (uint8_t) data[len-1];
+
+    	uint32_t crc2=crc32(0,(Bytef *)data,len-4);
+    	if(crc!=crc2)
     	{
         	pkt_del(pkt);
         	return E_CRC;
     	}
     	else
     	{
-        	pkt_set_crc(pkt,*crc);
+        	pkt_set_crc(pkt,crc);
     	}
-    	pkt_set_seqnum(pkt,(uint8_t)*(data+1));
+    	pkt_set_seqnum(pkt,data[1]);
     //TYPE
-    	uint8_t *header;
-    	header=(uint8_t *)data;
-    	int i,j;
-    	ptypes_t type=0;
-    	for (i = 0; i < 3; ++i) {
-		int bit=getibit((char)*header,5+i);
-  		if (bit) {type = type + pow (2, i);}
-    	}
-	if(type==PTYPE_DATA || type==PTYPE_ACK || type==PTYPE_NACK)
+    	ptypes_t type=data[0] >>5;
+        if(type==PTYPE_DATA || type==PTYPE_ACK || type==PTYPE_NACK)
     	{
         	pkt_set_type(pkt,type);
     	}
-	else
+        else
     	{
         	pkt_del(pkt);
         	return E_TYPE;
     	}
 	//WINDOW
 
-	uint8_t window=0;
-	for (j = 0; j < 5; j++) {
-        	int bit=getibit((char)*header,j)	;
-        	if (bit) {window = window + pow (2, j);}
-    	}
-    	pkt_set_window(pkt,window);
-
+        uint8_t window=data[0]&0b00011111 ;
+    pkt_status_code errorwin = pkt_set_window(pkt,window);
+    if(errorwin!=PKT_OK) return errorwin;
     	return PKT_OK;
 }
 
@@ -127,29 +118,36 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
     uint8_t window=pkt_get_window(pkt);
     uint16_t length=pkt_get_length(pkt);
-    uint32_t crc=pkt_get_crc(pkt);
+    //uint32_t crc=pkt_get_crc(pkt);
     uint8_t seqnum = pkt_get_seqnum(pkt);
 	uint8_t type =(uint8_t)pkt_get_type(pkt);
     uint16_t reste=length%4;
 	uint16_t pad;
 	if(reste!=0)
-		pad=4-reste;
+		pad=(4-reste)%4;
 	else
 		pad=0;
 	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
 	else{
         type=type<<5;
         uint8_t byteone=type|window;
-	memcpy((buf),&byteone,1);
-	memcpy((buf+1),&seqnum,1);
-	uint16_t l2=htons(length);
-        memcpy((buf+2),&l2,2);
-	char *payload = (char *)pkt_get_payload(pkt);
-        memcpy((buf+4), payload, length+pad);
-	uint32_t c2=htonl(crc);
-        memcpy((buf+length+pad+4),&c2,4);
-        size_t l=length+8+pad;
-        *len=l;
+	buf[0]= byteone;
+	buf[1]=seqnum;
+	buf[2]=(length >>8)&0xFF;
+	buf[3]=length&0xFF;
+    uint16_t i;
+	const char *payload =pkt_get_payload(pkt);
+	for(i=0;i<length+pad;i++) {buf[i+4]=payload[i];}
+
+
+        uint32_t crc = (uint32_t) crc32(0, (Bytef *) buf, 4 + length + pad);
+        buf[i+4] = (crc >> 24) & 0xFF;
+        buf[i+5] = (crc >> 16) & 0xFF;
+        buf[i+6] = (crc >> 8) & 0xFF;
+        buf[i+7] = crc & 0xFF;
+	//uint32_t c2=htonl(crc);
+
+        *len=4+length+pad+4;
         return PKT_OK;
 	}
 
@@ -164,8 +162,13 @@ pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
 
 pkt_status_code pkt_set_window(pkt_t *pkt, const uint8_t window)
 {
+    if(window>MAX_WINDOW_SIZE)
+    {
+        return E_WINDOW;
+    }
+    else{
         pkt->window=window;
-        return PKT_OK;
+        return PKT_OK;}
 }
 
 pkt_status_code pkt_set_seqnum(pkt_t *pkt, const uint8_t seqnum)
