@@ -34,6 +34,6 @@ const char * real_address(const char * address, struct sockaddr_in6 * rval) {
 
     freeaddrinfo(result);
 
-	return(NULL);
+	return NULL;
 
 }

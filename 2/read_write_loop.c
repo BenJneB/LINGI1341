@@ -53,7 +53,7 @@ void read_write_loop(int sfd) {
     	if(FD_ISSET(sfd,&readS) && FD_ISSET(STDOUT_FILENO,&writeS) && !readB)
     	{
         	ssize_t sizeR=read(sfd,buf,MAX_SEGMENT_SIZE);
-        	if(sizeR==EOF) readB=1;
+        	if(sizeR==EOF) readB=0;
 
         	ssize_t sizeW=0;
         	while(sizeW != sizeR)

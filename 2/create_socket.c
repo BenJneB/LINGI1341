@@ -21,13 +21,22 @@ int create_socket(struct sockaddr_in6 *source_addr, int src_port, struct sockadd
 
     int sfd=socket(AF_INET6,SOCK_DGRAM,IPPROTO_UDP);
 
-    if(sfd==-1) return -1;
+    if(sfd==-1)
+    {
+        perror("error creation socket in createsocket");
+
+        return -1;
+    }
 
     if(source_addr !=NULL)
     {
         if(src_port > 0 ) source_addr->sin6_port=src_port;
 
-        if(bind(sfd,(struct sockaddr *)source_addr,sizeof(struct sockaddr_in6))==-1) return -1;
+        if(bind(sfd,(struct sockaddr *)source_addr,sizeof(struct sockaddr_in6))==-1)
+        {
+                perror("error bind in createsocket");
+                return -1;
+        }
 
     }
 
@@ -35,7 +44,11 @@ int create_socket(struct sockaddr_in6 *source_addr, int src_port, struct sockadd
     {
         if(dst_port>0) dest_addr->sin6_port=dst_port;
 
-        if(connect(sfd,(struct sockaddr *)dest_addr,sizeof(struct sockaddr_in6))==-1) return -1;
+        if(connect(sfd,(struct sockaddr *)dest_addr,sizeof(struct sockaddr_in6))==-1)
+        {
+            perror("error connect in createsocket");
+            return -1;
+        }
     }
 
     return sfd;
