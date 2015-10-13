@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 /*
  * Creates a socket and initialize it
@@ -30,7 +31,7 @@ int create_socket(struct sockaddr_in6 *source_addr, int src_port, struct sockadd
 
     if(source_addr !=NULL)
     {
-        if(src_port > 0 ) source_addr->sin6_port=src_port;
+        if(src_port > 0 ) source_addr->sin6_port=htons(src_port);
 
         if(bind(sfd,(struct sockaddr *)source_addr,sizeof(struct sockaddr_in6))==-1)
         {
@@ -42,7 +43,12 @@ int create_socket(struct sockaddr_in6 *source_addr, int src_port, struct sockadd
 
     if(dest_addr!=NULL)
     {
-        if(dst_port>0) dest_addr->sin6_port=dst_port;
+       /* if(bind(sfd,(struct sockaddr *)dest_addr,sizeof(struct sockaddr_in6))==-1)
+        {
+                perror("error bind in createsocket dest");
+                return -1;
+        }*/
+        if(dst_port>0) dest_addr->sin6_port=htons(dst_port);
 
         if(connect(sfd,(struct sockaddr *)dest_addr,sizeof(struct sockaddr_in6))==-1)
         {
