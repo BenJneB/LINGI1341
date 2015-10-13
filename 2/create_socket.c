@@ -27,7 +27,7 @@ int create_socket(struct sockaddr_in6 *source_addr, int src_port, struct sockadd
     {
         if(src_port > 0 ) source_addr->sin6_port=src_port;
 
-        if(bind(sfd,source_addr,sizeof(*source_addr))==-1) return -1;
+        if(bind(sfd,(struct sockaddr *)source_addr,sizeof(struct sockaddr_in6))==-1) return -1;
 
     }
 
@@ -35,7 +35,7 @@ int create_socket(struct sockaddr_in6 *source_addr, int src_port, struct sockadd
     {
         if(dst_port>0) dest_addr->sin6_port=dst_port;
 
-        if(connect(sfd,dest_addr,sizeof(*dest_addr))==-1) return -1;
+        if(connect(sfd,(struct sockaddr *)dest_addr,sizeof(struct sockaddr_in6))==-1) return -1;
     }
 
     return sfd;

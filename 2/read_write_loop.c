@@ -1,13 +1,10 @@
 #include "read_write_loop.h"
-
-#include <poll.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-
-#define BUF_SIZE 1024
+#define MAX_SEGMENT_SIZE 1024
 
 /*
  * Loop reading a socket and printing to stdout,
@@ -18,21 +15,54 @@
 
 void read_write_loop(int sfd) {
 
-struct pollfd pfd[3];
-int eof=1;
-int noerror;
-pfd[0].fd=sfd;
-pfd[1].fd=STDIN_FILENO;
-pfd[2].fd=STDOUT_FILENO;
-pfd[0].events= POLLIN | POLLOUT;
-pfd[1].events=POLLIN;
-pfd[2].events=POLLOUT;
+	fd_set readS,writeS;
+	int readB=1;
+	char buf[MAX_SEGMENT_SIZE];
 
-while(eof)
-{
-    int i;
-    //a finir
-}
+	FD_ZERO(&readS);
+	FD_ZERO(&writeS);
 
 
+	while(true)
+	{
+
+    	if(readB)
+    	{
+        	FD_SET(STDIN_FILENO,&readS);
+        	FD_SET(sfd,&writeS);
+    	}
+    	else
+    	{
+        	FD_SET(sfd,&readS);
+        	FD_SET(STDOUT_FILENO,&writeS);
+    	}
+    	select(sfd+1,&readS,&writeS,NULL,NULL);
+
+    	if(FD_ISSET(STDIN_FILENO,&readS) && FD_ISSET(sfd,&writeS))
+    	{
+        	ssize_t sizeR=read(STDIN_FILENO,buf,MAX_SEGMENT_SIZE);
+        	if(sizeR==EOF) readB=0;
+
+        	ssize_t sizeW=0;
+        	while(sizeW != sizeR)
+        	{
+        	    ssize_t temp=write(sfd,buf,sizeR);
+            	sizeW += temp;
+        	}
+    	}
+    	if(FD_ISSET(sfd,&readS) && FD_ISSET(STDOUT_FILENO,&writeS) && !readB)
+    	{
+        	ssize_t sizeR=read(sfd,buf,MAX_SEGMENT_SIZE);
+        	if(sizeR==EOF) readB=1;
+
+        	ssize_t sizeW=0;
+        	while(sizeW != sizeR)
+        	{
+        	    ssize_t temp=write(STDOUT_FILENO,buf,sizeR);
+            	sizeW += temp;
+        	}
+    	}
+
+
+	}
 }

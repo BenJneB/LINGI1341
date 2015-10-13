@@ -16,10 +16,10 @@ const char * real_address(const char * address, struct sockaddr_in6 * rval) {
     int s;
 
     memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET6;    /* Allow IPv4 or IPv6 */
-    hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
-    hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
-    hints.ai_protocol = IPPROTO_UDP;          /* Any protocol */
+    hints.ai_family = AF_INET6;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_protocol = IPPROTO_UDP;
     hints.ai_canonname = NULL;
     hints.ai_addr = NULL;
     hints.ai_next = NULL;
@@ -29,7 +29,7 @@ const char * real_address(const char * address, struct sockaddr_in6 * rval) {
                 return(gai_strerror(s));
 
     struct sockaddr_in6 * addr = (struct sockaddr_in6 *) result->ai_addr;
-    memcpy(rval, addr, sizeof(struct sockaddr_in6));
+    memcpy(rval, addr, result->ai_addrlen);
 
 
     freeaddrinfo(result);
