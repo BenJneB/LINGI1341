@@ -1,13 +1,6 @@
 #include "real_address.h"
-
 #include <netdb.h>
-#include <netinet/in.h>
 #include <string.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <stdlib.h>
 
 const char * real_address(const char * address, struct sockaddr_in6 * rval) {
 
@@ -26,14 +19,11 @@ const char * real_address(const char * address, struct sockaddr_in6 * rval) {
 
     s=getaddrinfo(address,NULL, &hints,&result);
     if(s != 0)
-                return(gai_strerror(s));
+        return(gai_strerror(s));
 
     struct sockaddr_in6 * addr = (struct sockaddr_in6 *) result->ai_addr;
     memcpy(rval, addr, result->ai_addrlen);
 
-
     freeaddrinfo(result);
-
 	return NULL;
-
 }
