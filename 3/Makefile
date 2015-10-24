@@ -18,7 +18,7 @@ $(EXEC): % : $(SRCDIR)/%.o $(OBJ)
 	@$(CC) -o $(SRCDIR)/$@ -c $< $(CFLAGS)
 
 test: tests/test.c
-	$(CC) -o tests/$@ -c $< $(LFLAGS).
+	$(CC) -o tests/$@ -c $< $(LFLAGS)
 
 clean:
 	rm -rf $(SRCDIR)/*.o tests/*.o

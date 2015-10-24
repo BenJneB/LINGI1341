@@ -46,7 +46,17 @@ void pkt_del(pkt_t *pkt)
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
 
-
+	//TYPE
+    	ptypes_t type=data[0] >>5;
+        if(type==PTYPE_DATA || type==PTYPE_ACK || type==PTYPE_NACK)
+    	{
+        	pkt_set_type(pkt,type);
+    	}
+        else
+    	{
+        	pkt_del(pkt);
+        	return E_TYPE;
+    	}
         uint16_t l=(data[2]<<8)|data[3];
         uint16_t reste=l%4;
         uint16_t pad;
@@ -61,7 +71,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         	pkt_del(pkt);
         	return E_LENGTH;
     	}
-    	if(len==8)
+    	if(len==8 && type==PTYPE_DATA)
     	{
         	pkt_del(pkt);
        	 	return E_NOPAYLOAD;
@@ -95,17 +105,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         	pkt_set_crc(pkt,crc);
     	}
     	pkt_set_seqnum(pkt,data[1]);
-    //TYPE
-    	ptypes_t type=data[0] >>5;
-        if(type==PTYPE_DATA || type==PTYPE_ACK || type==PTYPE_NACK)
-    	{
-        	pkt_set_type(pkt,type);
-    	}
-        else
-    	{
-        	pkt_del(pkt);
-        	return E_TYPE;
-    	}
+    
 	//WINDOW
 
         uint8_t window=data[0]&0b00011111 ;
