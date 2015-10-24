@@ -251,7 +251,7 @@ int main(int argc, char **argv){
 		fprintf(stderr,"%s\n",erraddr);
 		return -1;
 	}
-	int socket = create_socket(NULL,0,&addr,port);
+	int socket = create_socket(&addr,port,NULL,0);
 	if(socket==-1)
 	{
 		fprintf(stderr,"Create Socket error\n");
