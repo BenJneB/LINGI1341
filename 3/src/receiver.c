@@ -52,7 +52,7 @@
 
 /*--------------------------------------------------------------------------------------------------*/
 
-char* filename=NULL;
+char* file=NULL;
 
 char* hostname;
 
@@ -84,9 +84,77 @@ void* consumer(); //prend les paquets du buf pour creer new fichier
 
 void* checkPKT(); //regarde les paquets recus (met dans buffer si OK sinon envoie ACK)
 
+int writeSocket(int socket, int length,char *buffer)
+{
+	ssize_t writed=write(socket,(void *)buffer,length);
+	if(writed==-1)
+	{
+		fprintf(stderr,"Error in writeSocket\n");
+		return -1;
+	}	
+	if(writed==EOF)
+		printf("EOFwrite\n");	
+	return 0;
+}
 
+int readSocket(int socket, char *buffer, int length)
+{
+	ssize_t readed=read(socket,(void *)buffer,length);
+	if(readed==-1)
+	{
+		fprintf(stderr,"Error in readSocket\n");
+		return -1;
+	}
+	if(readed==EOF)
+		printf("EOFread\n");		
+	return 0;
+}
 
+void receiver(int socket, char *filename)
+{
+	fd_set read, write;
+	char readed[520];
+	int f;
+	if(filename==NULL)
+		f=STDOUT_FILENO;
+	else
+		f=open(filename,O_WRONLY|O_CREAT|O_TRUNC);
+	while(1){
+	FD_ZERO(&read);
+	FD_ZERO(&write);
+	FD_SET(socket,&write);
+	FD_SET(socket,&read);
+	FD_SET(f,&write);
+	if(select(socket+1,&read,&write, NULL,NULL)==-1)
+	{
+		fprintf(stderr,"Error selectreceiver\n");
+		return;
+	}
 
+	if(FD_ISSET(socket,&write) && FD_ISSET(socket,&read))
+	{
+		printf("receiver readwritesocket\n");
+		int rd=readSocket(socket,readed,520);
+		if(rd==0)
+		{
+			pkt_t *pkt=pkt_new();
+			pkt_status_code errdec=pkt_decode((const char *)readed,rd,pkt);
+			if(errdec==PKT_OK)
+			{
+				if(pkt_get_type(pkt)==PTYPE_DATA)
+				{
+					printf("On doit créer ACK/NACK\n");
+				}
+			}
+			pkt_del(pkt);
+		}	
+	}
+	else if(FD_ISSET(f,&write))
+	{
+		printf("Write file\n");
+	}
+	}
+}
 
 int main(int argc, char **argv){
 
@@ -112,11 +180,11 @@ int main(int argc, char **argv){
 
         	{
 
-            		filename=argv[arg+1];
+            		file=argv[arg+1];
 
             		arg++;
 
-            		printf("%s\n",filename);
+            		printf("%s\n",file);
 
         	}
 
@@ -124,11 +192,11 @@ int main(int argc, char **argv){
 
         	{
 
-           		filename=argv[arg+1];
+           		file=argv[arg+1];
 
             		arg++;
 
-            		printf("%s\n",filename);
+            		printf("%s\n",file);
 
         	}
 
@@ -199,7 +267,8 @@ int main(int argc, char **argv){
 		return -1;
 	}
 	printf("afterwait\n");
-	read_write_loop(socket);
+	//read_write_loop(socket);
+	receiver(socket,file);
 	close(socket);
 
 	return 0;

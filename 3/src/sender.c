@@ -116,19 +116,18 @@ void sender(int socket,char *filename)
 	else
 		f=open(filename,O_RDONLY);
 	fd_set read, write;
+while(1){
 	FD_ZERO(&read);
 	FD_ZERO(&write);
 	FD_SET(socket,&write);
 	FD_SET(socket,&read);
 	FD_SET(f,&read);
 	char readed[512];
-	printf("start select\n");
 	if(select(socket+1,&read,&write,NULL,NULL)==-1)
 	{
 		fprintf(stderr,"Error selectsender\n");
 		return;
 	}
-	printf("after select\n");
 	if(FD_ISSET(socket,&read))
 	{
 		printf("Sender Read Socket\n");
@@ -136,7 +135,7 @@ void sender(int socket,char *filename)
 		if(rd==0)
 		{
 			pkt_t *pkt=pkt_new();
-			pkt_status_code errdec=pkt_decode((const char *) buf,4,pkt);
+			pkt_status_code errdec=pkt_decode((const char *) readed,4,pkt);
 			if(errdec==PKT_OK)
 			{
 				ptypes_t type=pkt_get_type(pkt);
@@ -159,11 +158,11 @@ void sender(int socket,char *filename)
 		}
 		
 	}
-
-	if(FD_ISSET(socket,&write) && FD_ISSET(f,&read))
+	else if(FD_ISSET(socket,&write) && FD_ISSET(f,&read))
 	{
 		printf("Sender read file\n");
 		int rf=readFile(f,readed,512);
+		printf("hahaha %s\n",readed);
 		if(rf==0)
 		{
 			pkt_t *pkt=pkt_new();
@@ -173,6 +172,7 @@ void sender(int socket,char *filename)
 			//seqnum
 
 			pkt_status_code errenc=pkt_encode(pkt,buf,(size_t *)&rf);
+			
 			if(errenc==PKT_OK)
 			{
 				if(writeSocket(socket,rf+8,buf)==-1)
@@ -192,7 +192,7 @@ void sender(int socket,char *filename)
 	
 	}
 
-	printf("end\n");
+}
 } 
 //faut un while qqpart
 
