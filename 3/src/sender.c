@@ -115,17 +115,21 @@ void sender(int socket,char *filename)
 		f=STDIN_FILENO;
 	else
 		f=open(filename,O_RDONLY);
-	fd_set read, write;
-	FD_ZERO(&read);
-	FD_ZERO(&write);
+	printf("afteropen\n");
+	fd_set read;//, write;
+	
+	//FD_ZERO(&write);
 	char readed[512];
 while(1){
 
-	FD_SET(socket,&write);
-	//FD_SET(socket,&read);
+	//FD_SET(socket,&write);
+FD_ZERO(&read);
 	FD_SET(f,&read);
-
-	int s=select(socket+1,&read,&write,NULL,NULL);
+	FD_SET(socket,&read);
+	
+	printf("beforeselect\n");
+	int s=select(socket+1,&read,NULL,NULL,NULL);
+	printf("aftersel\n");
 	if(s==-1)
 	{
 		fprintf(stderr,"Error selectsender\n");
@@ -162,7 +166,7 @@ printf("boucle\n");
 		}
 		
 	}
-	else if(FD_ISSET(socket,&write) && FD_ISSET(f,&read))
+	else if(FD_ISSET(f,&read))
 	{
 		printf("Sender read file\n");
 		int rf=readFile(f,readed,512);
