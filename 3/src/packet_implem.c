@@ -53,7 +53,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
         	pkt_set_type(pkt,type);
     	}
         else
-    	{
+    	{printf("type\n");
         	pkt_del(pkt);
         	return E_TYPE;
     	}
@@ -67,17 +67,17 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
             pad=0;
 
     	if(l>MAX_PAYLOAD_SIZE || len>520)
-    	{
+    	{printf("length\n");
         	pkt_del(pkt);
         	return E_LENGTH;
     	}
     	if(len==8 && type==PTYPE_DATA)
-    	{
+    	{printf("payload\n");
         	pkt_del(pkt);
        	 	return E_NOPAYLOAD;
     	}
     	if(4+l+pad+4 != (uint16_t)len)
-    	{
+    	{printf("uncon\n");
         	pkt_del(pkt);
         	return E_UNCONSISTENT;
     	}
@@ -127,7 +127,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 		pad=(4-reste)%4;
 	else
 		pad=0;
-	if(length+4+4+reste > (uint16_t)*len){ return E_NOMEM;}
+	if(length+4+4+reste > (uint16_t)*len){ printf("salop\n");return E_NOMEM;}
 	else{
         type=type<<5;
         uint8_t byteone=type|window;

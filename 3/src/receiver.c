@@ -94,7 +94,7 @@ int writeSocket(int socket, int length,char *buffer)
 	}	
 	if(writed==EOF)
 		printf("EOFwrite\n");	
-	return 0;
+	return writed;
 }
 
 int readSocket(int socket, char *buffer, int length)
@@ -107,7 +107,7 @@ int readSocket(int socket, char *buffer, int length)
 	}
 	if(readed==EOF)
 		printf("EOFread\n");		
-	return 0;
+	return readed;
 }
 
 void receiver(int socket, char *filename)
@@ -135,10 +135,11 @@ void receiver(int socket, char *filename)
 	{
 		printf("receiver readwritesocket\n");
 		int rd=readSocket(socket,readed,520);
-		if(rd==0)
+		if(rd>=0)
 		{
 			pkt_t *pkt=pkt_new();
-			pkt_status_code errdec=pkt_decode((const char *)readed,rd,pkt);
+			pkt_status_code errdec=pkt_decode((const char *)readed,(size_t)rd,pkt);
+printf("lu : %s\n",pkt_get_payload(pkt));
 			if(errdec==PKT_OK)
 			{
 				if(pkt_get_type(pkt)==PTYPE_DATA)
@@ -146,12 +147,19 @@ void receiver(int socket, char *filename)
 					printf("On doit créer ACK/NACK\n");
 				}
 			}
+			else
+			{
+				fprintf(stderr,"Error receiver decode\n");
+				return;
+			}
 			pkt_del(pkt);
+	printf("after del\n");
 		}	
 	}
 	else if(FD_ISSET(f,&write))
 	{
 		printf("Write file\n");
+		break;
 	}
 	}
 }
@@ -251,14 +259,13 @@ int main(int argc, char **argv){
 		fprintf(stderr,"%s\n",erraddr);
 		return -1;
 	}
-	int socket = create_socket(&addr,port,NULL,0);
+	int socket = create_socket(&addr,port,NULL,-1);
 	if(socket==-1)
 	{
 		fprintf(stderr,"Create Socket error\n");
 		close(socket);
 		return -1;
 	}
-	printf("beforewait\n");
 	int wait=wait_for_client(socket);
 	if(wait==-1)
 	{
@@ -266,7 +273,6 @@ int main(int argc, char **argv){
 		close(socket);
 		return -1;
 	}
-	printf("afterwait\n");
 	//read_write_loop(socket);
 	receiver(socket,file);
 	close(socket);
