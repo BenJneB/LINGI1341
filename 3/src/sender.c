@@ -17,58 +17,165 @@
 #include "real_address.h"
 #include "read_write_loop.h"
 #include "create_socket.h"
-
-
-
 /*--------------------------------------------------------------------------------------------------*/
-
 /*                            définition des variables globales				  														*/
-
 /*--------------------------------------------------------------------------------------------------*/
-
 char* file=NULL;
-
 char* hostname;
-
 int port=-1;
-
 char *buf;
-
-struct timeval timeBuf [16];
-
-//pkt_t *window[32];
-/*int i=0;
-while(i<32)
-{
-	window[i]=NULL;
-	i++;
-}*/
-
-int currentSeq; //Actuel numéro de séquence envoyé
-
-int lastSeq; //Dernier numéro de séquence envoyé confirmé
+int socketF;
 
 
+pkt_t * window[32];
+struct timeval timeBuf [32];
 
-
-
-
+int nProd = 0; //nbr pkt produit non envoyé
+int nSend = 16; //nbr pkt que l'on pourrait encore envoé
+int newPKT = -1; //position du plus recend paquet envoyé
+int oldPKT = 0; //position du plus vieux paquet envoyé
 
 /*--------------------------------------------------------------------------------------------------*/
-
 /*                                   définition de fonctions																				*/
-
 /*--------------------------------------------------------------------------------------------------*/
+
 
 void* producer(); //lit le fichier et met les paquets dans le buf
-
-//void* sender(); //envoie les paquets
-
-//void* listen(); //ecoute les ACK (et renvoie si besoin)
-
+void* sender(); //envoie les paquets
+void* listen(); //ecoute les ACK (et renvoie si besoin)
 void* checkTimer(); //verifie que le Timer le plus ancien ne depasse pas le RTT
+void* fichierMode(); //lance tout les thread pour l'envoie de fichier
+int makePacketFromChar(bufRead, result);//Renvoie 0
 
-int writeSocket(int socket, size_t length,char *buffer)
+
+void* fichierMode(){
+
+	socketF = create_socket(NULL,0,&addr,port);
+	if(socketF==-1)
+	{
+		fprintf(stderr,"Create Socket error\n");
+		close(socket);
+		return -1;
+	}
+	//lancement des threads
+	int err;
+	pthread_t producer, sender, listener, timer;
+	err=pthread_create(&producer, NULL, producer, NULL);
+	err+=pthread_create(&sender, NULL, sender, NULL);
+	err+=pthread_create(&listener, NULL, listener, NULL);
+	err+=pthread_create(&timer, NULL, checkTimer, NULL);
+		if(err!=0) {
+			perror("pthread_create");
+			return EXIT_FAILURE; }
+	
+	//fin des threads
+	err=pthread_join(producer, NULL);
+	err+=pthread_join(sender, NULL);
+	err+= pthread_join(listener, NULL);
+	err+= pthread_join(timer, NULL);
+	if(err!=0) {
+			perror("pthread_join");
+			return EXIT_FAILURE;
+    }
+	
+	close(socketF);
+}
+
+void* producer(){
+	int fd=0;
+	char * bufRead;
+	pkt_t temp = pkt_new;
+	if (file!=NULL){
+		fd=open(file, O_RDONLY);
+		if (fd<0) {
+			perror("file does not exist."); }
+    }
+	if(file==NULL) {
+			perror("filename mais fd"); }
+	int length = 1;
+	int seqNumber = 0;
+	
+	while (length!=0){
+		length = read(fd,(void*)bufRead, 512); //Renvoie 0 si il a rien lu
+		if (length!=0) {
+			temp = makePacketFromChar(bufRead, lenght); // A faire
+			while (window[seqNumber%32] != NULL) { // Fais rien car contient deja un packet pas envoyé
+			}
+			window[seqNumber%32]=temp;
+			nProd += 1;
+			seqNumber += seqNumber;
+			if (seqNumber == 256) { seqNumber = 0 ; }
+		}
+	}			
+	close(fd);
+}
+
+void* sender(){
+	int i = 0;
+	while(true){ 
+		if(nProd > 0 || nSend > 0 || window[i%32]==NULL ){
+		//envoyé window[i%32] au receiver
+		i++;
+		//timeBuf[i%32] = getTime();
+		newPKT += 1;
+		if (newPKT == 256) {newPKT = 0;}
+		nProd -= 1;
+		nSend -= 1;
+		}
+	}
+}
+
+void* listen(){
+	pkt_t temp2;
+	int bonus;
+	int numACK;
+	int pos;
+	
+	while(true){
+	//Attend un ack et le met dans temp2
+	if(temp2.type == 4) { //NACK
+	//Renvoie le paquet de window[temp2.seqnum%32]
+	//Timer
+	}
+	else if (temp2.type == 2){ //ACK
+		numACK = temp2.seqnum;
+		if(numACK == oldPKT){ //si c'est le plus vieux paquet en buffer confirmé
+		//Zone critique mutex
+			timeBuf[numACK%32] = NULL;//Annuler le timer
+			window[numACK%32]=NULL
+		//Fin zone		
+		//Checker le nombre de packet NULL à la suite et le mettre dans bonus
+			nSend += 1 + bonus;
+			oldPKT += 1 + bonus;
+			if(oldPKT > 255) { oldPKT = oldPKT%32;}
+		else {
+			pos = newPKT - oldPKT;
+			if (pos>0){ // Si la fenetre d'envoie n'est pas reporté au debut
+				if(numACK > oldPKT || numACK =< newPKT){ window[numACK]=NULL timeBuf[numACK] = NULL;} //Si l'ACK vient de la fenetre d'envoie on peux enlever le paquet
+			}
+			else{
+				if(numACK > oldPKT || numACK > newPKT){ window[numACK]=NULL timeBuf[numACK] = NULL;} //Si la fenetre est decallé et que l'ACK est à la fin
+				if(numACK < oldPKT || numACK =< newPKT){ window[numACK]=NULL timeBuf[numACK] = NULL;} //Si la fenetre est decallé et que l'ACK est au debut
+			}
+		}
+	}
+}
+
+void* checkTimer(){	
+	struct timeval temp;
+	
+	while(newPKT != -1){
+		temp = getTime() - timeBuf[oldPKT]; //On check le timer du plus vieux paquet en permanance
+		if( temp > 3){ // si le plus vieux timer depasse 3 sec
+		//Zone Cririque
+			//Renvoyé window[j]
+			timeBuf[j] = getTime();
+		//Fin Zone
+		}
+	}
+}
+
+int writeSocket(int socket, int length,char *buffer)
 {
 	ssize_t writed=write(socket,(void *)buffer,length);
 	if(writed==-1)
@@ -78,7 +185,7 @@ int writeSocket(int socket, size_t length,char *buffer)
 	}	
 	if(writed==EOF)
 		printf("EOFwrite\n");	
-	return writed;
+	return 0;
 }
 
 int readSocket(int socket, char *buffer, int length)
@@ -91,7 +198,7 @@ int readSocket(int socket, char *buffer, int length)
 	}
 	if(readed==EOF)
 		printf("EOFread\n");		
-	return readed;
+	return 0;
 }
 
 int readFile(int f, char *buffer,int length)
@@ -104,7 +211,7 @@ int readFile(int f, char *buffer,int length)
 	}
 	if(readed==EOF)
 		printf("EOFreadfile\n");
-	return readed;
+	return 0;
 }
 void sender(int socket,char *filename)
 {
@@ -115,27 +222,19 @@ void sender(int socket,char *filename)
 		f=STDIN_FILENO;
 	else
 		f=open(filename,O_RDONLY);
-	printf("afteropen\n");
-	fd_set read;//, write;
-	
-	//FD_ZERO(&write);
-	char readed[512];
+	fd_set read, write;
 while(1){
-
-	//FD_SET(socket,&write);
-FD_ZERO(&read);
-	FD_SET(f,&read);
+	FD_ZERO(&read);
+	FD_ZERO(&write);
+	FD_SET(socket,&write);
 	FD_SET(socket,&read);
-	
-	printf("beforeselect\n");
-	int s=select(socket+1,&read,NULL,NULL,NULL);
-	printf("aftersel\n");
-	if(s==-1)
+	FD_SET(f,&read);
+	char readed[512];
+	if(select(socket+1,&read,&write,NULL,NULL)==-1)
 	{
 		fprintf(stderr,"Error selectsender\n");
 		return;
 	}
-printf("boucle\n");
 	if(FD_ISSET(socket,&read))
 	{
 		printf("Sender Read Socket\n");
@@ -166,31 +265,24 @@ printf("boucle\n");
 		}
 		
 	}
-	else if(FD_ISSET(f,&read))
+	else if(FD_ISSET(socket,&write) && FD_ISSET(f,&read))
 	{
 		printf("Sender read file\n");
 		int rf=readFile(f,readed,512);
-		char *bufn=malloc(sizeof(char)*512);
-		strcpy(bufn,readed);
-		printf("hahaha %s\n",bufn);
-		if(rf>=0)
+		printf("hahaha %s\n",readed);
+		if(rf==0)
 		{
 			pkt_t *pkt=pkt_new();
 			pkt_set_type(pkt,PTYPE_DATA);
 			pkt_set_length(pkt,rf);
-			pkt_set_window(pkt,0);
-			pkt_set_seqnum(pkt,0);
-			pkt_set_payload(pkt,readed,(uint16_t)rf);
 			//win
 			//seqnum
-			printf("rf:%d\n",rf);
-			char tab[520];
-			size_t l=520;
-			pkt_status_code errenc=pkt_encode(pkt,tab,(size_t *)&l);
-			printf("l=%d\n",l);
+
+			pkt_status_code errenc=pkt_encode(pkt,buf,(size_t *)&rf);
+			
 			if(errenc==PKT_OK)
 			{
-				if(writeSocket(socket,l,tab)==-1)
+				if(writeSocket(socket,rf+8,buf)==-1)
 				{
 					fprintf(stderr,"Error sender writesocket\n");
 					return;
@@ -212,59 +304,41 @@ printf("boucle\n");
 //faut un while qqpart
 
 
-
-
 int main(int argc, char **argv){
 
 	hostname=malloc(50*sizeof(char));
 	buf=malloc(520*sizeof(char));
-
+	int i=0;
+		while(i<32)
+		{
+			window[i]=NULL;
+			i++;
+		}
     	if(argc < 3)
-
     	{
-
-        	fprintf(stderr, "Invalid number of argument : Need hostname AND port\n");
+     	fprintf(stderr, "Invalid number of argument : Need hostname AND port\n");
 		free(hostname);
 		return -1;
 
     	}
-
     	int arg;
-
     	for(arg=1;arg<argc;arg++)
-
     	{
-
         	if(strcmp("-f",argv[arg])==0 && argc>=arg+1)
-
         	{
-
             		file=argv[arg+1];
-
             		arg++;
-
             		printf("%s\n",file);
-
         	}
-
         	else if(strcmp("--filename",argv[arg])==0 && argc>=arg+1)
-
         	{
-
            		file=argv[arg+1];
-
             		arg++;
-
             		printf("%s\n",file);
-
         	}
-
         	else
-
         	{
-
             		strcpy(hostname,argv[arg]);
-
             		printf("%s\n", hostname);
 	    		if(argc>=arg+1)
 			{
@@ -313,7 +387,7 @@ int main(int argc, char **argv){
 		fprintf(stderr,"%s\n",erraddr);
 		return -1;
 	}
-	int socket = create_socket(NULL,-1,&addr,port);
+	int socket = create_socket(NULL,0,&addr,port);
 	if(socket==-1)
 	{
 		fprintf(stderr,"Create Socket error\n");
@@ -321,7 +395,6 @@ int main(int argc, char **argv){
 		return -1;
 	}
 	sender(socket,file);
-	close(socket);
 
 	return 0;
 
