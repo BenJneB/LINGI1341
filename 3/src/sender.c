@@ -18,14 +18,13 @@
 #include "read_write_loop.h"
 #include "create_socket.h"
 /*--------------------------------------------------------------------------------------------------*/
-/*                            définition des variables globales				  														*/
+/*                            définition des variables globales				                              */
 /*--------------------------------------------------------------------------------------------------*/
 char* file=NULL;
 char* hostname;
 int port=-1;
 char *buf;
 int socketF;
-
 
 pkt_t * window[32];
 struct timeval timeBuf [32];
@@ -39,23 +38,22 @@ int oldPKT = 0; //position du plus vieux paquet envoyé
 /*                                   définition de fonctions																				*/
 /*--------------------------------------------------------------------------------------------------*/
 
-
 void* producer(); //lit le fichier et met les paquets dans le buf
-void* sender(); //envoie les paquets
-void* listen(); //ecoute les ACK (et renvoie si besoin)
+void* sender2(); //envoie les paquets
+void* listen2(); //ecoute les ACK (et renvoie si besoin)
 void* checkTimer(); //verifie que le Timer le plus ancien ne depasse pas le RTT
 void* fichierMode(); //lance tout les thread pour l'envoie de fichier
-int makePacketFromChar(bufRead, result);//Renvoie 0
+//int makePacketFromChar(bufRead, result);//Renvoie 0
 
 
-void* fichierMode(){
+/*void* fichierMode(){
 
 	socketF = create_socket(NULL,0,&addr,port);
 	if(socketF==-1)
 	{
 		fprintf(stderr,"Create Socket error\n");
 		close(socket);
-		return -1;
+		//return -1;
 	}
 	//lancement des threads
 	int err;
@@ -75,16 +73,16 @@ void* fichierMode(){
 	err+= pthread_join(timer, NULL);
 	if(err!=0) {
 			perror("pthread_join");
-			return EXIT_FAILURE;
+			//return EXIT_FAILURE;
     }
 	
 	close(socketF);
-}
+}*/
 
-void* producer(){
+/*void* producer(){
 	int fd=0;
 	char * bufRead;
-	pkt_t temp = pkt_new;
+	pkt_t temp = pkt_new();
 	if (file!=NULL){
 		fd=open(file, O_RDONLY);
 		if (fd<0) {
@@ -98,7 +96,7 @@ void* producer(){
 	while (length!=0){
 		length = read(fd,(void*)bufRead, 512); //Renvoie 0 si il a rien lu
 		if (length!=0) {
-			temp = makePacketFromChar(bufRead, lenght); // A faire
+			//temp = makePacketFromChar(bufRead, lenght); // A faire
 			while (window[seqNumber%32] != NULL) { // Fais rien car contient deja un packet pas envoyé
 			}
 			window[seqNumber%32]=temp;
@@ -125,7 +123,7 @@ void* sender(){
 	}
 }
 
-void* listen(){
+void* listen2(){
 	pkt_t temp2;
 	int bonus;
 	int numACK;
@@ -174,7 +172,7 @@ void* checkTimer(){
 		}
 	}
 }
-
+*/
 int writeSocket(int socket, int length,char *buffer)
 {
 	ssize_t writed=write(socket,(void *)buffer,length);
