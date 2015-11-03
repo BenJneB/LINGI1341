@@ -34,6 +34,14 @@ int nSend = 16; //nbr pkt que l'on pourrait encore envoé
 int newPKT = -1; //position du plus recend paquet envoyé
 int oldPKT = 0; //position du plus vieux paquet envoyé
 
+/*pthread_mutex_t mutexP;
+pthread_mutex_t mutexS;
+pthread_mutex_t mutexPkt;
+pthread_mutex_init(&mutexP, NULL);
+pthread_mutex_init(&mutexN, NULL);
+pthread_mutex_init(&mutexPkt, NULL);
+*/
+
 /*--------------------------------------------------------------------------------------------------*/
 /*                                   définition de fonctions																				*/
 /*--------------------------------------------------------------------------------------------------*/
@@ -100,7 +108,9 @@ void* fichierMode(); //lance tout les thread pour l'envoie de fichier
 			while (window[seqNumber%32] != NULL) { // Fais rien car contient deja un packet pas envoyé
 			}
 			window[seqNumber%32]=temp;
+			pthread_mutex_lock(&mutexP);
 			nProd += 1;
+			pthread_mutex_unlock(&mutexP);
 			seqNumber += seqNumber;
 			if (seqNumber == 256) { seqNumber = 0 ; }
 		}
@@ -115,10 +125,16 @@ void* sender(){
 		//envoyé window[i%32] au receiver
 		i++;
 		//timeBuf[i%32] = getTime();
+		pthread_mutex_lock(&mutexPkt);
 		newPKT += 1;
+		pthread_mutex_unlock(&mutexPkt);
 		if (newPKT == 256) {newPKT = 0;}
+		pthread_mutex_lock(&mutexP);
+		pthread_mutex_lock(&mutexS);
 		nProd -= 1;
 		nSend -= 1;
+		pthread_mutex_unlock(&mutexP);
+		pthread_mutex_unlock(&mutexS);
 		}
 	}
 }
@@ -143,11 +159,17 @@ void* listen2(){
 			window[numACK%32]=NULL
 		//Fin zone		
 		//Checker le nombre de packet NULL à la suite et le mettre dans bonus
+			pthread_mutex_lock(&mutexS);
+			pthread_mutex_lock(&mutexPkt);
 			nSend += 1 + bonus;
 			oldPKT += 1 + bonus;
+			pthread_mutex_unlock(&mutexS);
+			pthread_mutex_unlock(&mutexPkt);
 			if(oldPKT > 255) { oldPKT = oldPKT%32;}
 		else {
+			pthread_mutex_lock(&mutexPkt);
 			pos = newPKT - oldPKT;
+			pthread_mutex_unlock(&mutexPkt);
 			if (pos>0){ // Si la fenetre d'envoie n'est pas reporté au debut
 				if(numACK > oldPKT || numACK =< newPKT){ window[numACK]=NULL timeBuf[numACK] = NULL;} //Si l'ACK vient de la fenetre d'envoie on peux enlever le paquet
 			}
