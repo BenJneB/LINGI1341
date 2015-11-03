@@ -1,49 +1,26 @@
 #include <stdio.h>
-
 #include <stdlib.h>
-
 #include <unistd.h>
-
 #include <unistd.h>
-
 #include <pthread.h>
-
 #include <sys/socket.h>
-
 #include <sys/types.h>
-
 #include <netinet/in.h>
-
 #include <netdb.h>
-
 #include <string.h>
-
 #include <errno.h>
-
 #include <arpa/inet.h>
-
 #include <getopt.h>
-
 #include <fcntl.h>
-
 #include <time.h>
-
 #include <sys/time.h>
-
 #include "packet_interface.h"
-
 #include "create_socket.h"
-
 #include "read_write_loop.h"
-
 #include "real_address.h"
-
 #include "wait_for_client.h"
 
-
-
 #define MAXPKTSIZE 520
-
 #define MAXSEQNUM 255
 
 /*--------------------------------------------------------------------------------------------------*/
@@ -53,26 +30,20 @@
 /*--------------------------------------------------------------------------------------------------*/
 
 char* file=NULL;
-
 char* hostname;
-
 int port=-1;
-
 pkt_t *packet;
 
+pkt_t * window[32];
+int nProd = 0;
+int oldN = 0;
+int newN = 15;
 
-
-//pkt_t buffer [16];
-
-int currentSeq; //le plus recent numéro de seq recu
-
-int oldSeq; //le plus ancien numéro de seq e nattente
-
-
-
-
-
-
+/*pthread_mutex_t mutexP;
+pthread_mutex_t mutexN;
+pthread_mutex_init(&mutexP, NULL);
+pthread_mutex_init(&mutexN, NULL);
+int finish = 1;*/
 
 /*--------------------------------------------------------------------------------------------------*/
 
@@ -80,9 +51,48 @@ int oldSeq; //le plus ancien numéro de seq e nattente
 
 /*--------------------------------------------------------------------------------------------------*/
 
-void* consumer(); //prend les paquets du buf pour creer new fichier
+/*void* writer(){ //prend les paquets du buf pour creer new fichier
+  i = 0;
+  pkt_t temp;
+  while (nProd > 0 || finish ==1){
+    temp = window[i%32]; //Check si fini
+    //write(temp);
+    pthread_mutex_lock(&mutexP);
+    nProd = nProd-1;
+    pthread_mutex_unlock(&mutexP);
+    pthread_mutex_lock(&mutexN);   
+    oldN = oldN+1;
+    newN = newN+1;
+    pthread_mutex_unlock(&mutexN);
+  }
+}*/
 
-void* checkPKT(); //regarde les paquets recus (met dans buffer si OK sinon envoie ACK)
+/*void* listener(){ //regarde les paquets recus (met dans buffer si OK sinon envoie ACK)
+  int bonus = 0;
+  pkt_t temp2;
+  while(finish == 1){
+  //temp2 = rcv();
+  if (temp2.crc == -1) { send(NACK);}
+  
+  pthread_mutex_lock(&mutexN);   
+  if (temp2.seqnum == oldN){
+    pthread_mutex_unlock(&mutexN);
+    window[oldN%32]=temp2;
+    pthread_mutex_lock(&mutexP);
+    while (window[(oldN+1+bonus)%32]==NULL){
+      bonus = bonus + 1;
+    }
+    nProd = nProd+1+bonus;
+    bonus = 0;
+    pthread_mutex_unlock(&mutexP);  
+  }
+  
+  pthread_mutex_lock(&mutexN); 
+  if (temp2.seqnum < oldN || temp2.seqnum =< newN){
+    pthread_mutex_unlock(&mutexN);
+    window[oldN%32]=temp2;  
+  }
+}*/
 
 int writeSocket(int socket, int length,char *buffer)
 {
